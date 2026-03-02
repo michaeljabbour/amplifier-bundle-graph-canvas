@@ -46,9 +46,9 @@ class GraphCanvasTool:
         self._state = GraphState()
         self._transport = transport
 
-    async def _broadcast(self, delta: str | dict[str, Any]) -> None:
+    async def _broadcast(self, delta: dict[str, Any]) -> None:
         """Emit a mutation delta via transport, if available. Fire-and-forget."""
-        if self._transport is not None and isinstance(delta, dict):
+        if self._transport is not None:
             try:
                 await self._transport.emit(delta)
             except Exception:
@@ -171,6 +171,7 @@ class GraphCanvasTool:
                     properties=arguments.get("properties"),
                     _with_delta=True,
                 )
+                assert isinstance(delta, dict)  # guaranteed by _with_delta=True
                 result = {"result": {"node_id": node_id}, "delta": delta}
                 await self._broadcast(delta)
                 return result
@@ -200,6 +201,7 @@ class GraphCanvasTool:
                     edge_type=arguments.get("edge_type", "data_flow"),
                     _with_delta=True,
                 )
+                assert isinstance(delta, dict)  # guaranteed by _with_delta=True
                 result = {"result": {"edge_id": edge_id}, "delta": delta}
                 await self._broadcast(delta)
                 return result
