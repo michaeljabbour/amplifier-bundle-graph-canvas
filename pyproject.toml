@@ -1,0 +1,27 @@
+[project]
+name = "amplifier-bundle-graph-canvas"
+version = "0.1.0"
+description = "Amplifier bundle for graph canvas authoring"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24.0",
+]
+
+[tool.uv.workspace]
+members = [
+    "modules/graph-canvas-compiler",
+    "modules/tool-graph-canvas",
+    "modules/hooks-graph-canvas",
+]
+
+[tool.uv.sources]
+graph-canvas-compiler = { workspace = true }
+tool-graph-canvas = { workspace = true }
+hooks-graph-canvas = { workspace = true }
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
