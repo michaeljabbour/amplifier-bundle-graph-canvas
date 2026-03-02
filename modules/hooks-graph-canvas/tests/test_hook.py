@@ -173,3 +173,22 @@ class TestMountFunction:
 
         hook = mount(config={"skip_subsessions": False})
         assert isinstance(hook, GraphCanvasHook)
+
+    def test_mount_uses_jsonl_transport_by_default(self):
+        from hooks_graph_canvas import mount
+
+        hook = mount()
+        assert isinstance(hook._transport, JsonlTransport)
+
+    def test_mount_accepts_custom_transport_from_config(self):
+        from hooks_graph_canvas import mount
+
+        custom_transport = WebSocketTransport()
+        hook = mount(config={"transport": custom_transport})
+        assert hook._transport is custom_transport
+
+    def test_mount_uses_jsonl_when_transport_not_in_config(self):
+        from hooks_graph_canvas import mount
+
+        hook = mount(config={"skip_subsessions": False})
+        assert isinstance(hook._transport, JsonlTransport)

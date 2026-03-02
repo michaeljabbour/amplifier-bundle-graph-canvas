@@ -4,5 +4,6 @@
 def mount(config: dict | None = None):
     from .hook import GraphCanvasHook, JsonlTransport
 
-    transport = JsonlTransport()
-    return GraphCanvasHook(config=config or {}, transport=transport)
+    config = config or {}
+    transport = config.get("transport") or JsonlTransport()
+    return GraphCanvasHook(config=config, transport=transport)
