@@ -15,16 +15,16 @@ from graph_canvas_compiler.schema import CompileError
 
 
 def _node(
-    id: str,
-    type: str,
+    node_id: str,
+    node_type: str,
     title: str | None = None,
     properties: dict | None = None,
     modifiers: dict | None = None,
 ) -> dict:
     """Build a minimal node dict matching Graph.to_dict() format."""
     return {
-        "id": id,
-        "type": type,
+        "id": node_id,
+        "type": node_type,
         "x": 0.0,
         "y": 0.0,
         "title": title,
@@ -69,7 +69,7 @@ class TestEmptyGraph:
         data = _parse(result)
         assert data["name"] == "untitled"
         assert data["version"] == "1.7.0"
-        assert "steps" not in data or data["steps"] is None or data["steps"] == []
+        assert "steps" not in data
 
     def test_default_name(self):
         result = compile_graph({"nodes": [], "edges": []})

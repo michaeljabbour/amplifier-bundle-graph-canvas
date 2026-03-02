@@ -13,6 +13,11 @@ from ruamel.yaml import YAML
 
 from .schema import CompileError, NodeCategory, get_node_type
 
+# Module-level YAML instance (avoids per-call construction)
+_YAML = YAML()
+_YAML.default_flow_style = False
+_YAML.indent(mapping=2, sequence=4, offset=2)
+
 # Canonical key orderings for deterministic output
 _TOP_LEVEL_KEY_ORDER = [
     "name",
@@ -335,7 +340,7 @@ def _is_empty(value: Any) -> bool:
     """Check if a value is considered empty/default for omission."""
     if value is None:
         return True
-    if isinstance(value, str) and value == "":
+    if value == "":
         return True
     if isinstance(value, dict) and len(value) == 0:
         return True
@@ -353,9 +358,6 @@ def _order_dict(d: dict[str, Any], key_order: list[str]) -> dict[str, Any]:
 
 def _dump_yaml(data: dict[str, Any]) -> str:
     """Dump dict to block-style YAML string, 2-space indent."""
-    yaml = YAML()
-    yaml.default_flow_style = False
-    yaml.indent(mapping=2, sequence=4, offset=2)
     stream = StringIO()
-    yaml.dump(data, stream)
+    _YAML.dump(data, stream)
     return stream.getvalue()
