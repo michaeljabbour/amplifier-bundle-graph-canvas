@@ -2,11 +2,22 @@
 
 from __future__ import annotations
 
-from typing import Any
+import logging
+from typing import Any, Protocol, runtime_checkable
 
 from graph_canvas_compiler import compile_graph, decompile_recipe
 
 from .graph_state import GraphState
+
+logger = logging.getLogger(__name__)
+
+
+@runtime_checkable
+class Transport(Protocol):
+    """Protocol for transport objects that broadcast mutation deltas."""
+
+    async def emit(self, delta: dict[str, Any]) -> None: ...
+
 
 _ACTIONS = [
     "get_graph_state",
@@ -27,11 +38,21 @@ class GraphCanvasTool:
     """LLM-callable tool for graph canvas manipulation."""
 
     def __init__(
-        self, config: dict[str, Any] | None = None, transport: Any = None
+        self,
+        config: dict[str, Any] | None = None,
+        transport: Transport | None = None,
     ) -> None:
         self._config = config or {}
         self._state = GraphState()
         self._transport = transport
+
+    async def _broadcast(self, delta: str | dict[str, Any]) -> None:
+        """Emit a mutation delta via transport, if available. Fire-and-forget."""
+        if self._transport is not None and isinstance(delta, dict):
+            try:
+                await self._transport.emit(delta)
+            except Exception:
+                logger.debug("transport.emit failed", exc_info=True)
 
     @property
     def name(self) -> str:
@@ -151,21 +172,13 @@ class GraphCanvasTool:
                     _with_delta=True,
                 )
                 result = {"result": {"node_id": node_id}, "delta": delta}
-                if self._transport is not None:
-                    try:
-                        await self._transport.emit(delta)
-                    except Exception:
-                        pass
+                await self._broadcast(delta)
                 return result
 
             elif action == "remove_node":
                 delta = self._state.remove_node(arguments["node_id"])
                 result = {"result": {"removed": arguments["node_id"]}, "delta": delta}
-                if self._transport is not None:
-                    try:
-                        await self._transport.emit(delta)
-                    except Exception:
-                        pass
+                await self._broadcast(delta)
                 return result
 
             elif action == "set_node_property":
@@ -175,11 +188,7 @@ class GraphCanvasTool:
                     arguments["value"],
                 )
                 result = {"result": {"updated": arguments["node_id"]}, "delta": delta}
-                if self._transport is not None:
-                    try:
-                        await self._transport.emit(delta)
-                    except Exception:
-                        pass
+                await self._broadcast(delta)
                 return result
 
             elif action == "connect_nodes":
@@ -192,31 +201,19 @@ class GraphCanvasTool:
                     _with_delta=True,
                 )
                 result = {"result": {"edge_id": edge_id}, "delta": delta}
-                if self._transport is not None:
-                    try:
-                        await self._transport.emit(delta)
-                    except Exception:
-                        pass
+                await self._broadcast(delta)
                 return result
 
             elif action == "disconnect":
                 delta = self._state.disconnect(arguments["edge_id"])
                 result = {"result": {"removed": arguments["edge_id"]}, "delta": delta}
-                if self._transport is not None:
-                    try:
-                        await self._transport.emit(delta)
-                    except Exception:
-                        pass
+                await self._broadcast(delta)
                 return result
 
             elif action == "clear_graph":
                 delta = self._state.clear()
                 result = {"result": {"cleared": True}, "delta": delta}
-                if self._transport is not None:
-                    try:
-                        await self._transport.emit(delta)
-                    except Exception:
-                        pass
+                await self._broadcast(delta)
                 return result
 
             elif action == "compile_recipe":

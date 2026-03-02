@@ -399,3 +399,146 @@ class TestTransportBroadcast:
         tool = GraphCanvasTool(config={}, transport=capture)
         await tool.execute(arguments={"action": "get_graph_state"})
         assert len(capture.emitted) == 0
+
+    @pytest.mark.parametrize(
+        "action_name, expected_delta_action",
+        [
+            ("add_node", "add_node"),
+            ("remove_node", "remove_node"),
+            ("set_node_property", "update_node"),
+            ("connect_nodes", "add_edge"),
+            ("disconnect", "remove_edge"),
+            ("clear_graph", "clear"),
+        ],
+        ids=[
+            "add_node",
+            "remove_node",
+            "set_node_property",
+            "connect_nodes",
+            "disconnect",
+            "clear_graph",
+        ],
+    )
+    async def test_mutating_action_broadcasts(self, action_name, expected_delta_action):
+        """Every mutating action broadcasts exactly one delta via transport."""
+        capture = CaptureTransport()
+        tool = GraphCanvasTool(config={}, transport=capture)
+
+        # Some actions require pre-existing nodes/edges — set them up.
+        if action_name == "add_node":
+            await tool.execute(
+                arguments={
+                    "action": "add_node",
+                    "type": "workflow/agent",
+                    "x": 0.0,
+                    "y": 0.0,
+                }
+            )
+        elif action_name == "remove_node":
+            r = await tool.execute(
+                arguments={
+                    "action": "add_node",
+                    "type": "workflow/agent",
+                    "x": 0.0,
+                    "y": 0.0,
+                }
+            )
+            capture.emitted.clear()
+            await tool.execute(
+                arguments={
+                    "action": "remove_node",
+                    "node_id": r["result"]["node_id"],
+                }
+            )
+        elif action_name == "set_node_property":
+            r = await tool.execute(
+                arguments={
+                    "action": "add_node",
+                    "type": "workflow/agent",
+                    "x": 0.0,
+                    "y": 0.0,
+                }
+            )
+            capture.emitted.clear()
+            await tool.execute(
+                arguments={
+                    "action": "set_node_property",
+                    "node_id": r["result"]["node_id"],
+                    "property": "title",
+                    "value": "updated",
+                }
+            )
+        elif action_name == "connect_nodes":
+            r1 = await tool.execute(
+                arguments={
+                    "action": "add_node",
+                    "type": "workflow/agent",
+                    "x": 0.0,
+                    "y": 0.0,
+                }
+            )
+            r2 = await tool.execute(
+                arguments={
+                    "action": "add_node",
+                    "type": "workflow/bash",
+                    "x": 200.0,
+                    "y": 0.0,
+                }
+            )
+            capture.emitted.clear()
+            await tool.execute(
+                arguments={
+                    "action": "connect_nodes",
+                    "from_id": r1["result"]["node_id"],
+                    "from_slot": 0,
+                    "to_id": r2["result"]["node_id"],
+                    "to_slot": 0,
+                }
+            )
+        elif action_name == "disconnect":
+            r1 = await tool.execute(
+                arguments={
+                    "action": "add_node",
+                    "type": "workflow/agent",
+                    "x": 0.0,
+                    "y": 0.0,
+                }
+            )
+            r2 = await tool.execute(
+                arguments={
+                    "action": "add_node",
+                    "type": "workflow/bash",
+                    "x": 200.0,
+                    "y": 0.0,
+                }
+            )
+            conn = await tool.execute(
+                arguments={
+                    "action": "connect_nodes",
+                    "from_id": r1["result"]["node_id"],
+                    "from_slot": 0,
+                    "to_id": r2["result"]["node_id"],
+                    "to_slot": 0,
+                }
+            )
+            capture.emitted.clear()
+            await tool.execute(
+                arguments={
+                    "action": "disconnect",
+                    "edge_id": conn["result"]["edge_id"],
+                }
+            )
+        elif action_name == "clear_graph":
+            await tool.execute(
+                arguments={
+                    "action": "add_node",
+                    "type": "workflow/agent",
+                    "x": 0.0,
+                    "y": 0.0,
+                }
+            )
+            capture.emitted.clear()
+            await tool.execute(arguments={"action": "clear_graph"})
+
+        assert len(capture.emitted) == 1
+        assert capture.emitted[0]["action"] == expected_delta_action
