@@ -109,6 +109,15 @@ class TestNodeTypeSpec:
         assert d["supported_modifiers"] == ["condition"]
         assert d["recipe_step_type"] == "agent"
 
+    def test_to_dict_properties_are_deepcopied(self):
+        """Mutating to_dict() output must not corrupt the original spec."""
+        spec = get_node_type("workflow/context")
+        d = spec.to_dict()
+        # Mutate the nested dict in the serialized output
+        d["properties"]["variables"]["injected"] = "bad"
+        # Original spec must be unaffected
+        assert spec.properties["variables"] == {}
+
 
 # --- CompileError tests ---
 
@@ -321,6 +330,12 @@ class TestListNodeTypes:
     def test_list_basic_nodes(self):
         basic_nodes = list_node_types(category="basic")
         assert len(basic_nodes) == 4
+
+    def test_list_by_node_category_enum(self):
+        """list_node_types should accept NodeCategory directly, not just strings."""
+        workflow_nodes = list_node_types(category=NodeCategory.WORKFLOW)
+        assert len(workflow_nodes) == 5
+        assert all(n.category == NodeCategory.WORKFLOW for n in workflow_nodes)
 
 
 # --- Unknown type error ---

@@ -5,6 +5,7 @@ Defines all known node types for Phase 1 workflow nodes and Phase 2 computation 
 
 from __future__ import annotations
 
+import copy
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
@@ -56,7 +57,7 @@ class NodeTypeSpec:
             "description": self.description,
             "inputs": [{"name": s.name, "type": s.type} for s in self.inputs],
             "outputs": [{"name": s.name, "type": s.type} for s in self.outputs],
-            "properties": self.properties,
+            "properties": copy.deepcopy(self.properties),
             "supported_modifiers": self.supported_modifiers,
             "recipe_step_type": self.recipe_step_type,
         }
@@ -88,11 +89,12 @@ def get_node_type(type_name: str) -> NodeTypeSpec:
         raise CompileError(f"Unknown node type: {type_name}") from None
 
 
-def list_node_types(category: str | None = None) -> list[NodeTypeSpec]:
+def list_node_types(category: str | NodeCategory | None = None) -> list[NodeTypeSpec]:
     """List registered node types, optionally filtered by category."""
     if category is None:
         return list(_REGISTRY.values())
-    return [s for s in _REGISTRY.values() if s.category.value == category]
+    value = category.value if isinstance(category, NodeCategory) else category
+    return [s for s in _REGISTRY.values() if s.category.value == value]
 
 
 # =============================================================================
