@@ -6,4 +6,5 @@ def mount(config: dict | None = None):
 
     config = config or {}
     transport = config.get("transport") or JsonlTransport()
-    return GraphCanvasHook(config=config, transport=transport)
+    clean_config = {k: v for k, v in config.items() if k != "transport"}
+    return GraphCanvasHook(config=clean_config, transport=transport)

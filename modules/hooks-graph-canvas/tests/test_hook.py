@@ -192,3 +192,17 @@ class TestMountFunction:
 
         hook = mount(config={"skip_subsessions": False})
         assert isinstance(hook._transport, JsonlTransport)
+
+    def test_mount_uses_jsonl_when_transport_is_none(self):
+        from hooks_graph_canvas import mount
+
+        hook = mount(config={"transport": None})
+        assert isinstance(hook._transport, JsonlTransport)
+
+    def test_mount_does_not_mutate_caller_config(self):
+        from hooks_graph_canvas import mount
+
+        caller_config = {"transport": WebSocketTransport(), "skip_subsessions": False}
+        mount(config=caller_config)
+        assert "transport" in caller_config
+        assert "skip_subsessions" in caller_config
