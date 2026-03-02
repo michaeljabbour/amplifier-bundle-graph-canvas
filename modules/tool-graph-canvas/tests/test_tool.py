@@ -2,7 +2,28 @@
 
 import pytest
 
+from tool_graph_canvas import mount
 from tool_graph_canvas.tool import GraphCanvasTool
+
+
+# ---------------------------------------------------------------------------
+# Helpers for transport tests
+# ---------------------------------------------------------------------------
+class FakeTransport:
+    """Minimal transport stub that does nothing."""
+
+    async def emit(self, delta: dict) -> None:
+        pass
+
+
+class CaptureTransport:
+    """Transport stub that records every emitted delta."""
+
+    def __init__(self) -> None:
+        self.emitted: list[dict] = []
+
+    async def emit(self, delta: dict) -> None:
+        self.emitted.append(delta)
 
 
 @pytest.fixture
@@ -323,3 +344,58 @@ class TestFullWorkflow:
         assert "run_tests" in yaml_str
         # The bash step should depend on the agent step
         assert "depends_on" in yaml_str
+
+
+# ---------------------------------------------------------------------------
+# mount() function tests
+# ---------------------------------------------------------------------------
+class TestMountFunction:
+    def test_mount_returns_graph_canvas_tool(self):
+        tool = mount()
+        assert isinstance(tool, GraphCanvasTool)
+
+    def test_mount_with_no_transport_does_not_broadcast(self):
+        tool = mount()
+        assert tool._transport is None
+
+    def test_mount_passes_transport_to_tool(self):
+        fake = FakeTransport()
+        tool = mount(config={"transport": fake})
+        assert tool._transport is fake
+
+
+# ---------------------------------------------------------------------------
+# Transport broadcast tests
+# ---------------------------------------------------------------------------
+class TestTransportBroadcast:
+    async def test_add_node_broadcasts_delta_via_transport(self):
+        capture = CaptureTransport()
+        tool = GraphCanvasTool(config={}, transport=capture)
+        await tool.execute(
+            arguments={
+                "action": "add_node",
+                "type": "workflow/agent",
+                "x": 0.0,
+                "y": 0.0,
+            }
+        )
+        assert len(capture.emitted) == 1
+        assert capture.emitted[0]["action"] == "add_node"
+
+    async def test_no_broadcast_when_transport_is_none(self):
+        tool = GraphCanvasTool(config={}, transport=None)
+        result = await tool.execute(
+            arguments={
+                "action": "add_node",
+                "type": "workflow/agent",
+                "x": 0.0,
+                "y": 0.0,
+            }
+        )
+        assert "result" in result
+
+    async def test_get_graph_state_does_not_broadcast(self):
+        capture = CaptureTransport()
+        tool = GraphCanvasTool(config={}, transport=capture)
+        await tool.execute(arguments={"action": "get_graph_state"})
+        assert len(capture.emitted) == 0

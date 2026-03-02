@@ -26,9 +26,12 @@ _ACTIONS = [
 class GraphCanvasTool:
     """LLM-callable tool for graph canvas manipulation."""
 
-    def __init__(self, config: dict[str, Any] | None = None) -> None:
+    def __init__(
+        self, config: dict[str, Any] | None = None, transport: Any = None
+    ) -> None:
         self._config = config or {}
         self._state = GraphState()
+        self._transport = transport
 
     @property
     def name(self) -> str:
@@ -147,11 +150,23 @@ class GraphCanvasTool:
                     properties=arguments.get("properties"),
                     _with_delta=True,
                 )
-                return {"result": {"node_id": node_id}, "delta": delta}
+                result = {"result": {"node_id": node_id}, "delta": delta}
+                if self._transport is not None:
+                    try:
+                        await self._transport.emit(delta)
+                    except Exception:
+                        pass
+                return result
 
             elif action == "remove_node":
                 delta = self._state.remove_node(arguments["node_id"])
-                return {"result": {"removed": arguments["node_id"]}, "delta": delta}
+                result = {"result": {"removed": arguments["node_id"]}, "delta": delta}
+                if self._transport is not None:
+                    try:
+                        await self._transport.emit(delta)
+                    except Exception:
+                        pass
+                return result
 
             elif action == "set_node_property":
                 delta = self._state.set_node_property(
@@ -159,7 +174,13 @@ class GraphCanvasTool:
                     arguments["property"],
                     arguments["value"],
                 )
-                return {"result": {"updated": arguments["node_id"]}, "delta": delta}
+                result = {"result": {"updated": arguments["node_id"]}, "delta": delta}
+                if self._transport is not None:
+                    try:
+                        await self._transport.emit(delta)
+                    except Exception:
+                        pass
+                return result
 
             elif action == "connect_nodes":
                 edge_id, delta = self._state.connect_nodes(
@@ -170,15 +191,33 @@ class GraphCanvasTool:
                     edge_type=arguments.get("edge_type", "data_flow"),
                     _with_delta=True,
                 )
-                return {"result": {"edge_id": edge_id}, "delta": delta}
+                result = {"result": {"edge_id": edge_id}, "delta": delta}
+                if self._transport is not None:
+                    try:
+                        await self._transport.emit(delta)
+                    except Exception:
+                        pass
+                return result
 
             elif action == "disconnect":
                 delta = self._state.disconnect(arguments["edge_id"])
-                return {"result": {"removed": arguments["edge_id"]}, "delta": delta}
+                result = {"result": {"removed": arguments["edge_id"]}, "delta": delta}
+                if self._transport is not None:
+                    try:
+                        await self._transport.emit(delta)
+                    except Exception:
+                        pass
+                return result
 
             elif action == "clear_graph":
                 delta = self._state.clear()
-                return {"result": {"cleared": True}, "delta": delta}
+                result = {"result": {"cleared": True}, "delta": delta}
+                if self._transport is not None:
+                    try:
+                        await self._transport.emit(delta)
+                    except Exception:
+                        pass
+                return result
 
             elif action == "compile_recipe":
                 graph_dict = self._state.get_state()
