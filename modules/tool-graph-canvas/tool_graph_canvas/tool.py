@@ -52,7 +52,7 @@ class GraphCanvasTool:
             try:
                 await self._transport.emit(delta)
             except Exception:
-                logger.debug("transport.emit failed", exc_info=True)
+                logger.warning("transport.emit failed", exc_info=True)
 
     @property
     def name(self) -> str:
