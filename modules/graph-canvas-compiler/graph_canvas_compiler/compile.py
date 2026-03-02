@@ -11,7 +11,7 @@ from typing import Any
 
 from ruamel.yaml import YAML
 
-from .schema import CompileError, get_node_type
+from .schema import CompileError, NodeCategory, get_node_type
 
 # Canonical key orderings for deterministic output
 _TOP_LEVEL_KEY_ORDER = [
@@ -59,11 +59,9 @@ def compile_graph(graph: dict[str, Any], name: str = "untitled") -> str:
     nodes = graph.get("nodes", [])
     edges = graph.get("edges", [])
 
-    # Index nodes by id, preserving original list position
-    node_by_id: dict[str, dict] = {}
+    # Index nodes by original list position for stable sorting
     node_position: dict[str, int] = {}
     for i, node in enumerate(nodes):
-        node_by_id[node["id"]] = node
         node_position[node["id"]] = i
 
     # Classify nodes
@@ -75,7 +73,7 @@ def compile_graph(graph: dict[str, Any], name: str = "untitled") -> str:
     for node in nodes:
         node_type = node["type"]
         spec = get_node_type(node_type)
-        if spec.category.value != "workflow":
+        if spec.category != NodeCategory.WORKFLOW:
             # Computation node — silently skip
             continue
         workflow_nodes.append(node)
@@ -151,7 +149,7 @@ def compile_graph(graph: dict[str, Any], name: str = "untitled") -> str:
                 stage_dict["approval_timeout"] = props["approval_timeout"]
 
             # Nested steps
-            child_ids = stage_children.get(stage_id, [])
+            child_ids = set(stage_children.get(stage_id, []))
             nested_steps: list[dict[str, Any]] = []
             for wn in sorted_workflow:
                 if wn["id"] in child_ids:

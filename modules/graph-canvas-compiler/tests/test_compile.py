@@ -554,3 +554,86 @@ class TestCycleDetection:
         }
         with pytest.raises(CompileError, match="[Cc]ycle"):
             compile_graph(graph, name="cyclic")
+
+
+class TestMultipleContextNodesMerge:
+    def test_two_context_nodes_merge_variables(self):
+        """Multiple context nodes should merge their variables into one top-level context."""
+        graph = {
+            "nodes": [
+                _node(
+                    "ctx1",
+                    "workflow/context",
+                    properties={
+                        "variables": {"env": "production", "region": "us-east"}
+                    },
+                ),
+                _node(
+                    "ctx2",
+                    "workflow/context",
+                    properties={"variables": {"debug": True, "timeout": 30}},
+                ),
+                _node(
+                    "n1",
+                    "workflow/bash",
+                    title="Build",
+                    properties={"command": "make build"},
+                ),
+            ],
+            "edges": [],
+        }
+        result = compile_graph(graph, name="test")
+        data = _parse(result)
+        assert data["context"] == {
+            "env": "production",
+            "region": "us-east",
+            "debug": True,
+            "timeout": 30,
+        }
+
+    def test_overlapping_context_nodes_last_wins(self):
+        """When context nodes have overlapping keys, later node overwrites."""
+        graph = {
+            "nodes": [
+                _node(
+                    "ctx1",
+                    "workflow/context",
+                    properties={"variables": {"env": "staging"}},
+                ),
+                _node(
+                    "ctx2",
+                    "workflow/context",
+                    properties={"variables": {"env": "production"}},
+                ),
+            ],
+            "edges": [],
+        }
+        result = compile_graph(graph, name="test")
+        data = _parse(result)
+        assert data["context"]["env"] == "production"
+
+
+class TestEmptyDictPropertiesOmitted:
+    def test_empty_dict_properties_omitted(self):
+        """Empty dict values in properties should be omitted from output."""
+        graph = {
+            "nodes": [
+                _node(
+                    "n1",
+                    "workflow/agent",
+                    title="Minimal",
+                    properties={
+                        "agent": "zen",
+                        "instructions": "do work",
+                        "context": {},
+                    },
+                ),
+            ],
+            "edges": [],
+        }
+        result = compile_graph(graph, name="test")
+        data = _parse(result)
+        step = data["steps"][0]
+        assert "context" not in step
+        assert step["agent"] == "zen"
+        assert step["instructions"] == "do work"
