@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import yaml as pyyaml
 import pytest
+from ruamel.yaml import YAML
 
 from graph_canvas_compiler.compile import compile_graph
 from graph_canvas_compiler.schema import CompileError
@@ -54,7 +54,8 @@ def _edge(
 
 def _parse(yaml_str: str) -> dict:
     """Parse YAML string to dict for assertions."""
-    return pyyaml.safe_load(yaml_str)
+    _yaml = YAML()
+    return _yaml.load(yaml_str)
 
 
 # ===========================================================================
