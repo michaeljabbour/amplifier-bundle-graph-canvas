@@ -1,3 +1,4 @@
+# Virtual workspace root — no build-system needed
 [project]
 name = "amplifier-bundle-graph-canvas"
 version = "0.1.0"
