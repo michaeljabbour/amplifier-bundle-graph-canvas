@@ -637,3 +637,111 @@ class TestEmptyDictPropertiesOmitted:
         assert "context" not in step
         assert step["agent"] == "zen"
         assert step["instructions"] == "do work"
+
+
+class TestCanonicalKeyOrdering:
+    def test_step_keys_in_canonical_order(self):
+        """Step dict keys should appear in the canonical order defined by _STEP_KEY_ORDER."""
+        graph = {
+            "nodes": [
+                _node(
+                    "n1",
+                    "workflow/agent",
+                    title="Ordered Step",
+                    properties={
+                        "agent": "zen-architect",
+                        "instructions": "Analyze",
+                        "model": "claude-sonnet",
+                        "output_var": "result",
+                    },
+                    modifiers={
+                        "condition": "{{flag}}",
+                        "retry": 3,
+                        "timeout": 60,
+                    },
+                ),
+                _node(
+                    "n2",
+                    "workflow/bash",
+                    title="Dep Target",
+                    properties={"command": "echo done"},
+                ),
+            ],
+            "edges": [
+                _edge("e1", "n1", "n2", edge_type="dependency"),
+            ],
+        }
+        result = compile_graph(graph, name="test")
+        data = _parse(result)
+
+        # Check step with many fields has canonical key order
+        step = data["steps"][0]
+        expected_order = [
+            "name",
+            "type",
+            "agent",
+            "instructions",
+            "output_var",
+            "condition",
+            "retry",
+            "timeout",
+            "model",
+        ]
+        assert list(step.keys()) == expected_order
+
+        # Check the dependent step's key order too
+        dep_step = data["steps"][1]
+        expected_dep_order = [
+            "name",
+            "type",
+            "command",
+            "depends_on",
+        ]
+        assert list(dep_step.keys()) == expected_dep_order
+
+    def test_top_level_keys_in_canonical_order(self):
+        """Top-level recipe keys should appear in canonical order."""
+        graph = {
+            "nodes": [
+                _node(
+                    "ctx1",
+                    "workflow/context",
+                    properties={"variables": {"env": "prod"}},
+                ),
+                _node(
+                    "n1",
+                    "workflow/bash",
+                    title="Build",
+                    properties={"command": "make"},
+                ),
+            ],
+            "edges": [],
+        }
+        result = compile_graph(graph, name="test")
+        data = _parse(result)
+        assert list(data.keys()) == ["name", "version", "context", "steps"]
+
+
+class TestOnlyComputationNodes:
+    def test_only_computation_nodes_produces_minimal_recipe(self):
+        """A graph with only computation nodes should produce the same minimal recipe as empty."""
+        graph = {
+            "nodes": [
+                _node("m1", "math/operation", properties={"op": "+"}),
+                _node("m2", "math/compare"),
+                _node("l1", "logic/AND"),
+                _node("s1", "string/toString"),
+                _node("b1", "basic/const"),
+            ],
+            "edges": [
+                _edge("e1", "m1", "m2"),
+                _edge("e2", "m2", "l1"),
+            ],
+        }
+        result = compile_graph(graph, name="compute-only")
+        data = _parse(result)
+        assert data["name"] == "compute-only"
+        assert data["version"] == "1.7.0"
+        assert "steps" not in data
+        assert "stages" not in data
+        assert "context" not in data

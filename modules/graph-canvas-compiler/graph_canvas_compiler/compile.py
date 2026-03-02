@@ -274,7 +274,7 @@ def _build_dependency_map(
         if src in workflow_ids and dst in workflow_ids:
             if dst not in dep_map:
                 dep_map[dst] = []
-            src_name = node_step_names[src] if src in node_step_names else src
+            src_name = node_step_names[src]
             dep_map[dst].append(src_name)
     return dep_map
 
