@@ -1,0 +1,25 @@
+bundle:
+  name: graph-canvas-behavior
+  version: 0.1.0
+  description: Graph canvas tool + visualization hooks
+
+tools:
+  - module: tool-graph-canvas
+    source: git+https://github.com/michaeljabbour/amplifier-bundle-graph-canvas@main#subdirectory=modules/tool-graph-canvas
+    config:
+      broadcast_transport: websocket
+
+hooks:
+  - module: hooks-graph-canvas
+    source: git+https://github.com/michaeljabbour/amplifier-bundle-graph-canvas@main#subdirectory=modules/hooks-graph-canvas
+    config:
+      skip_subsessions: true
+      throttle_ms: 100
+
+agents:
+  include:
+    - graph-canvas:graph-canvas-expert
+
+context:
+  include:
+    - graph-canvas:context/graph-canvas-awareness.md
