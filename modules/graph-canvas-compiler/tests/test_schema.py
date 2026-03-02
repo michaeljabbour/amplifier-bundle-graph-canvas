@@ -122,6 +122,7 @@ class TestCompileError:
 
 # --- Workflow node existence and properties ---
 
+# Intentionally duplicated from implementation to test the contract independently
 WORKFLOW_STEP_MODIFIERS = [
     "condition",
     "foreach",

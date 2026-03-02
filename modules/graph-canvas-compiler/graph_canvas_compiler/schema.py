@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any
 
 
 class CompileError(Exception):
@@ -42,11 +43,11 @@ class NodeTypeSpec:
     description: str
     inputs: list[SlotSpec] = field(default_factory=list)
     outputs: list[SlotSpec] = field(default_factory=list)
-    properties: dict = field(default_factory=dict)
+    properties: dict[str, Any] = field(default_factory=dict)
     supported_modifiers: list[str] = field(default_factory=list)
     recipe_step_type: str | None = None
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to a plain dictionary."""
         return {
             "type_name": self.type_name,
