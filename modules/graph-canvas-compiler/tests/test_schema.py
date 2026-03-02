@@ -118,6 +118,16 @@ class TestNodeTypeSpec:
         # Original spec must be unaffected
         assert spec.properties["variables"] == {}
 
+    def test_to_dict_supported_modifiers_are_copied(self):
+        """Mutating to_dict() output must not corrupt the shared modifiers list."""
+        spec = get_node_type("workflow/agent")
+        d = spec.to_dict()
+        original_modifiers = list(spec.supported_modifiers)
+        # Mutate the serialized output
+        d["supported_modifiers"].append("injected_modifier")
+        # Original spec must be unaffected
+        assert spec.supported_modifiers == original_modifiers
+
 
 # --- CompileError tests ---
 

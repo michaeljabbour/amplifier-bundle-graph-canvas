@@ -58,7 +58,7 @@ class NodeTypeSpec:
             "inputs": [{"name": s.name, "type": s.type} for s in self.inputs],
             "outputs": [{"name": s.name, "type": s.type} for s in self.outputs],
             "properties": copy.deepcopy(self.properties),
-            "supported_modifiers": self.supported_modifiers,
+            "supported_modifiers": list(self.supported_modifiers),
             "recipe_step_type": self.recipe_step_type,
         }
 
