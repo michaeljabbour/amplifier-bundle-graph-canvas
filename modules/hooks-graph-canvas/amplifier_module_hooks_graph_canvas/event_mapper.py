@@ -16,6 +16,11 @@ def _node_id_from(data: dict) -> str:
     return data.get("request_id") or data.get("session_id", "unknown")
 
 
+def _tool_id_from(data: dict) -> str:
+    """Extract a tool use ID from event data, tolerating missing keys."""
+    return data.get("tool_use_id") or data.get("tool_call_id", "unknown")
+
+
 def _map_provider_request(data: dict) -> dict:
     return {
         "event": "provider:request",
@@ -60,17 +65,18 @@ def _map_content_block_delta(data: dict) -> dict:
 
 
 def _map_tool_pre(data: dict) -> dict:
+    tool_id = _tool_id_from(data)
     return {
         "event": "tool:pre",
         "action": "add_node",
-        "node_id": data["tool_use_id"],
+        "node_id": tool_id,
         "data": {
             "type": data.get("tool_name", "unknown_tool"),
             "status": "executing",
         },
         "edge": {
             "from_node": _node_id_from(data),
-            "to_node": data["tool_use_id"],
+            "to_node": tool_id,
             "edge_type": "data_flow",
         },
         "detail_level": "high",
@@ -84,7 +90,7 @@ def _map_tool_post(data: dict) -> dict:
     return {
         "event": "tool:post",
         "action": "update_node",
-        "node_id": data["tool_use_id"],
+        "node_id": _tool_id_from(data),
         "data": {
             "status": "complete",
             "result_preview": preview,
@@ -98,7 +104,7 @@ def _map_tool_error(data: dict) -> dict:
     return {
         "event": "tool:error",
         "action": "update_node",
-        "node_id": data["tool_use_id"],
+        "node_id": _tool_id_from(data),
         "data": {
             "status": "error",
             "error": data.get("error"),
@@ -112,7 +118,7 @@ def _map_session_spawn(data: dict) -> dict:
     return {
         "event": "session:spawn",
         "action": "add_node",
-        "node_id": data["session_id"],
+        "node_id": data.get("session_id", "unknown"),
         "data": {
             "type": "agent_spawn",
             "collapsed": True,
@@ -126,7 +132,7 @@ def _map_session_complete(data: dict) -> dict:
     return {
         "event": "session:complete",
         "action": "update_node",
-        "node_id": data["session_id"],
+        "node_id": data.get("session_id", "unknown"),
         "data": {
             "status": "complete",
         },
@@ -139,7 +145,7 @@ def _map_recipe_step_start(data: dict) -> dict:
     return {
         "event": "recipe:step:start",
         "action": "add_node",
-        "node_id": data["step_id"],
+        "node_id": data.get("step_id", "unknown"),
         "data": {
             "type": "recipe_step",
             "step_name": data.get("step_name"),
@@ -153,7 +159,7 @@ def _map_recipe_step_complete(data: dict) -> dict:
     return {
         "event": "recipe:step:complete",
         "action": "update_node",
-        "node_id": data["step_id"],
+        "node_id": data.get("step_id", "unknown"),
         "data": {
             "status": "complete",
         },

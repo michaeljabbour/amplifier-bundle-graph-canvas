@@ -131,6 +131,18 @@ class TestToolPre:
         assert delta is not None
         assert delta["edge"]["from_node"] == "sess-abc"
 
+    def test_tool_pre_without_tool_use_id(self):
+        """Graceful fallback when tool_use_id is missing."""
+        data = {
+            "session_id": "sess-abc",
+            "tool_name": "read_file",
+            "timestamp": "2026-03-01T12:00:02Z",
+        }
+        delta = map_event("tool:pre", data)
+
+        assert delta is not None
+        assert delta["node_id"] == "unknown"
+
 
 class TestToolPost:
     def test_tool_post_returns_update_node_delta(self):
