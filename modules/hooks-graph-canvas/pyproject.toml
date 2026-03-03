@@ -15,6 +15,9 @@ dev = [
     "pytest-asyncio>=0.24.0",
 ]
 
+[project.entry-points."amplifier.modules"]
+hooks-graph-canvas = "hooks_graph_canvas:mount"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"

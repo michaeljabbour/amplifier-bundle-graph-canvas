@@ -161,48 +161,91 @@ class TestWebSocketTransport:
         await transport.close()  # Should not raise
 
 
-class TestMountFunction:
-    def test_mount_returns_graph_canvas_hook(self):
-        from hooks_graph_canvas import mount
+class TestHookFactoryConfig:
+    """Tests for hook construction — previously covered mount() as a factory.
 
-        hook = mount()
+    ``mount()`` is now the Kepler coordinator entry-point (async, takes a
+    coordinator).  These tests verify the same config/transport wiring by
+    constructing :class:`GraphCanvasHook` directly.
+    """
+
+    def test_hook_creates_graph_canvas_hook(self):
+        hook = GraphCanvasHook(config={})
         assert isinstance(hook, GraphCanvasHook)
 
-    def test_mount_with_config(self):
-        from hooks_graph_canvas import mount
-
-        hook = mount(config={"skip_subsessions": False})
+    def test_hook_with_config(self):
+        hook = GraphCanvasHook(config={"skip_subsessions": False})
         assert isinstance(hook, GraphCanvasHook)
 
-    def test_mount_uses_jsonl_transport_by_default(self):
-        from hooks_graph_canvas import mount
-
-        hook = mount()
+    def test_hook_uses_jsonl_transport_by_default(self):
+        hook = GraphCanvasHook(config={})
         assert isinstance(hook._transport, JsonlTransport)
 
-    def test_mount_accepts_custom_transport_from_config(self):
-        from hooks_graph_canvas import mount
-
+    def test_hook_accepts_custom_transport(self):
         custom_transport = WebSocketTransport()
-        hook = mount(config={"transport": custom_transport})
+        hook = GraphCanvasHook(config={}, transport=custom_transport)
         assert hook._transport is custom_transport
 
-    def test_mount_uses_jsonl_when_transport_not_in_config(self):
-        from hooks_graph_canvas import mount
-
-        hook = mount(config={"skip_subsessions": False})
+    def test_hook_uses_jsonl_when_no_transport_kwarg(self):
+        hook = GraphCanvasHook(config={"skip_subsessions": False})
         assert isinstance(hook._transport, JsonlTransport)
 
-    def test_mount_uses_jsonl_when_transport_is_none(self):
-        from hooks_graph_canvas import mount
-
-        hook = mount(config={"transport": None})
+    def test_hook_uses_jsonl_when_transport_is_none(self):
+        hook = GraphCanvasHook(config={}, transport=None)
         assert isinstance(hook._transport, JsonlTransport)
 
-    def test_mount_does_not_mutate_caller_config(self):
+    def test_config_not_mutated_by_hook(self):
+        caller_config = {"skip_subsessions": False}
+        GraphCanvasHook(config=caller_config)
+        assert "skip_subsessions" in caller_config
+
+
+class TestKeplerMount:
+    """Tests for the Kepler coordinator mount() entry-point."""
+
+    async def test_mount_registers_hook_events_on_coordinator(self):
+        from unittest.mock import MagicMock
+
+        from hooks_graph_canvas import _HOOK_EVENTS, mount
+
+        coordinator = MagicMock()
+        coordinator.hooks = MagicMock()
+        coordinator.hooks.register = MagicMock(return_value=None)
+
+        await mount(coordinator, config={})
+
+        registered_events = [
+            call.args[0] for call in coordinator.hooks.register.call_args_list
+        ]
+        assert registered_events == _HOOK_EVENTS
+
+    async def test_mount_passes_transport_from_config(self):
+        from unittest.mock import MagicMock
+
         from hooks_graph_canvas import mount
+
+        coordinator = MagicMock()
+        coordinator.hooks = MagicMock()
+        coordinator.hooks.register = MagicMock(return_value=None)
+
+        custom = WebSocketTransport()
+        await mount(coordinator, config={"transport": custom})
+
+        # All registered handlers should be the same hook instance with custom transport
+        handler = coordinator.hooks.register.call_args_list[0].args[1]
+        assert isinstance(handler, GraphCanvasHook)
+        assert handler._transport is custom
+
+    async def test_mount_does_not_mutate_caller_config(self):
+        from unittest.mock import MagicMock
+
+        from hooks_graph_canvas import mount
+
+        coordinator = MagicMock()
+        coordinator.hooks = MagicMock()
+        coordinator.hooks.register = MagicMock(return_value=None)
 
         caller_config = {"transport": WebSocketTransport(), "skip_subsessions": False}
-        mount(config=caller_config)
+        await mount(coordinator, config=caller_config)
         assert "transport" in caller_config
         assert "skip_subsessions" in caller_config

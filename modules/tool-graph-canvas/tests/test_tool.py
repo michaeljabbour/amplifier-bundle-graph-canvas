@@ -2,7 +2,6 @@
 
 import pytest
 
-from tool_graph_canvas import mount
 from tool_graph_canvas.tool import GraphCanvasTool
 
 
@@ -347,21 +346,71 @@ class TestFullWorkflow:
 
 
 # ---------------------------------------------------------------------------
-# mount() function tests
+# Tool factory / construction tests
+# (mount() is now the Kepler coordinator entry-point — see TestKeplerMount)
 # ---------------------------------------------------------------------------
-class TestMountFunction:
-    def test_mount_returns_graph_canvas_tool(self):
-        tool = mount()
+class TestToolFactoryConfig:
+    """Verify GraphCanvasTool construction wiring — previously via mount()."""
+
+    def test_tool_creates_graph_canvas_tool(self):
+        tool = GraphCanvasTool(config={})
         assert isinstance(tool, GraphCanvasTool)
 
-    def test_mount_with_no_transport_does_not_broadcast(self):
-        tool = mount()
+    def test_tool_with_no_transport(self):
+        tool = GraphCanvasTool(config={})
         assert tool._transport is None
 
-    def test_mount_passes_transport_to_tool(self):
+    def test_tool_passes_transport(self):
         fake = FakeTransport()
-        tool = mount(config={"transport": fake})
+        tool = GraphCanvasTool(config={}, transport=fake)
         assert tool._transport is fake
+
+
+class TestKeplerMount:
+    """Tests for the Kepler coordinator mount() entry-point."""
+
+    async def test_mount_registers_tool_on_coordinator(self):
+        from unittest.mock import AsyncMock, MagicMock
+
+        from tool_graph_canvas import mount
+
+        coordinator = MagicMock()
+        coordinator.mount = AsyncMock()
+
+        await mount(coordinator, config={})
+
+        coordinator.mount.assert_called_once()
+        call_args = coordinator.mount.call_args
+        assert call_args.args[0] == "tools"
+        assert isinstance(call_args.args[1], GraphCanvasTool)
+        assert call_args.kwargs.get("name") == "graph_canvas"
+
+    async def test_mount_passes_transport_to_tool(self):
+        from unittest.mock import AsyncMock, MagicMock
+
+        from tool_graph_canvas import mount
+
+        fake = FakeTransport()
+        coordinator = MagicMock()
+        coordinator.mount = AsyncMock()
+
+        await mount(coordinator, config={"transport": fake})
+
+        registered_tool = coordinator.mount.call_args.args[1]
+        assert registered_tool._transport is fake
+
+    async def test_mount_with_no_transport_is_none(self):
+        from unittest.mock import AsyncMock, MagicMock
+
+        from tool_graph_canvas import mount
+
+        coordinator = MagicMock()
+        coordinator.mount = AsyncMock()
+
+        await mount(coordinator, config={})
+
+        registered_tool = coordinator.mount.call_args.args[1]
+        assert registered_tool._transport is None
 
 
 # ---------------------------------------------------------------------------
