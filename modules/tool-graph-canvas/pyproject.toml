@@ -7,9 +7,7 @@ name = "tool-graph-canvas"
 version = "0.1.0"
 description = "Tool module for graph canvas operations"
 requires-python = ">=3.11"
-dependencies = [
-    "graph-canvas-compiler",
-]
+dependencies = []
 
 [project.optional-dependencies]
 dev = [

@@ -5,7 +5,18 @@ from __future__ import annotations
 import logging
 from typing import Any, Protocol, runtime_checkable
 
-from graph_canvas_compiler import compile_graph, decompile_recipe
+try:
+    from graph_canvas_compiler import compile_graph, decompile_recipe
+except ImportError:
+    import sys
+    from pathlib import Path as _Path
+
+    _compiler_path = str(
+        _Path(__file__).resolve().parent.parent.parent / "graph-canvas-compiler"
+    )
+    if _compiler_path not in sys.path:
+        sys.path.insert(0, _compiler_path)
+    from graph_canvas_compiler import compile_graph, decompile_recipe
 
 from .graph_state import GraphState
 

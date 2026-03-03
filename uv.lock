@@ -167,9 +167,6 @@ wheels = [
 name = "tool-graph-canvas"
 version = "0.1.0"
 source = { editable = "modules/tool-graph-canvas" }
-dependencies = [
-    { name = "graph-canvas-compiler" },
-]
 
 [package.optional-dependencies]
 dev = [
@@ -179,7 +176,6 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "graph-canvas-compiler", editable = "modules/graph-canvas-compiler" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.24.0" },
 ]
