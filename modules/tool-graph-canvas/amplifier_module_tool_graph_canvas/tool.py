@@ -89,6 +89,10 @@ class GraphCanvasTool:
         )
 
     @property
+    def input_schema(self) -> dict[str, Any]:
+        return self.parameters
+
+    @property
     def parameters(self) -> dict[str, Any]:
         return {
             "type": "object",
