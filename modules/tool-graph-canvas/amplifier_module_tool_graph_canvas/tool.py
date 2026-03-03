@@ -8,15 +8,26 @@ from typing import Any, Protocol, runtime_checkable
 try:
     from amplifier_module_graph_canvas_compiler import compile_graph, decompile_recipe
 except ImportError:
-    import sys
-    from pathlib import Path as _Path
+    try:
+        import sys
+        from pathlib import Path as _Path
 
-    _compiler_path = str(
-        _Path(__file__).resolve().parent.parent.parent / "graph-canvas-compiler"
-    )
-    if _compiler_path not in sys.path:
-        sys.path.insert(0, _compiler_path)
-    from amplifier_module_graph_canvas_compiler import compile_graph, decompile_recipe
+        _compiler_path = str(
+            _Path(__file__).resolve().parent.parent.parent / "graph-canvas-compiler"
+        )
+        if _compiler_path not in sys.path:
+            sys.path.insert(0, _compiler_path)
+        from amplifier_module_graph_canvas_compiler import (
+            compile_graph,
+            decompile_recipe,
+        )
+    except ImportError:
+        compile_graph = None  # type: ignore[assignment]
+        decompile_recipe = None  # type: ignore[assignment]
+        logging.getLogger(__name__).warning(
+            "graph-canvas-compiler unavailable (missing ruamel.yaml?) "
+            "— compile/load actions disabled"
+        )
 
 from .graph_state import GraphState
 
@@ -230,12 +241,16 @@ class GraphCanvasTool:
                 return result
 
             elif action == "compile_recipe":
+                if compile_graph is None:
+                    return {"error": "compile_recipe unavailable — graph-canvas-compiler not installed (missing ruamel.yaml)"}
                 graph_dict = self._state.get_state()
                 recipe_name = arguments.get("name", "untitled")
                 yaml_str = compile_graph(graph_dict, name=recipe_name)
                 return {"result": {"yaml": yaml_str}}
 
             elif action == "load_recipe":
+                if decompile_recipe is None:
+                    return {"error": "load_recipe unavailable — graph-canvas-compiler not installed (missing ruamel.yaml)"}
                 yaml_str = arguments["yaml"]
                 graph_dict = decompile_recipe(yaml_str)
                 # Replace current state

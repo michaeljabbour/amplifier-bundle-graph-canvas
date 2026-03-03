@@ -4,9 +4,11 @@ from amplifier_module_hooks_graph_canvas.event_mapper import map_event
 
 
 class TestProviderRequest:
-    def test_provider_request_returns_add_node_delta(self):
+    def test_provider_request_with_request_id(self):
+        """Backward compat: request_id is preferred when present."""
         data = {
             "request_id": "req-123",
+            "session_id": "sess-abc",
             "model": "claude-3.5-sonnet",
             "timestamp": "2026-03-01T12:00:00Z",
         }
@@ -22,9 +24,29 @@ class TestProviderRequest:
         assert delta["event"] == "provider:request"
         assert delta["timestamp"] == "2026-03-01T12:00:00Z"
 
+    def test_provider_request_falls_back_to_session_id(self):
+        """Real kernel events only have session_id, not request_id."""
+        data = {
+            "session_id": "sess-abc",
+            "model": "claude-3.5-sonnet",
+            "timestamp": "2026-03-01T12:00:00Z",
+        }
+        delta = map_event("provider:request", data)
+
+        assert delta is not None
+        assert delta["node_id"] == "sess-abc"
+
+    def test_provider_request_without_any_id(self):
+        """Graceful fallback when neither key is present."""
+        data = {"model": "claude-3", "timestamp": "2026-03-01T12:00:00Z"}
+        delta = map_event("provider:request", data)
+
+        assert delta is not None
+        assert delta["node_id"] == "unknown"
+
 
 class TestProviderResponse:
-    def test_provider_response_returns_update_node_delta(self):
+    def test_provider_response_with_request_id(self):
         data = {
             "request_id": "req-123",
             "usage": {"input_tokens": 100, "output_tokens": 50},
@@ -39,9 +61,20 @@ class TestProviderResponse:
         assert delta["data"]["usage"] == {"input_tokens": 100, "output_tokens": 50}
         assert delta["detail_level"] == "high"
 
+    def test_provider_response_falls_back_to_session_id(self):
+        data = {
+            "session_id": "sess-abc",
+            "usage": {"input_tokens": 100, "output_tokens": 50},
+            "timestamp": "2026-03-01T12:00:01Z",
+        }
+        delta = map_event("provider:response", data)
+
+        assert delta is not None
+        assert delta["node_id"] == "sess-abc"
+
 
 class TestContentBlockDelta:
-    def test_content_block_delta_returns_drill_down_detail_level(self):
+    def test_content_block_delta_with_request_id(self):
         data = {
             "request_id": "req-123",
             "delta": {"text": "Hello"},
@@ -54,9 +87,20 @@ class TestContentBlockDelta:
         assert delta["node_id"] == "req-123"
         assert delta["detail_level"] == "drill_down"
 
+    def test_content_block_delta_falls_back_to_session_id(self):
+        data = {
+            "session_id": "sess-abc",
+            "delta": {"text": "Hello"},
+            "timestamp": "2026-03-01T12:00:00.500Z",
+        }
+        delta = map_event("content_block:delta", data)
+
+        assert delta is not None
+        assert delta["node_id"] == "sess-abc"
+
 
 class TestToolPre:
-    def test_tool_pre_returns_add_node_delta(self):
+    def test_tool_pre_with_request_id(self):
         data = {
             "request_id": "req-123",
             "tool_use_id": "tool-456",
@@ -71,10 +115,21 @@ class TestToolPre:
         assert delta["data"]["type"] == "read_file"
         assert delta["data"]["status"] == "executing"
         assert delta["detail_level"] == "high"
-        # Should also include edge info for connecting to LLM node
         assert delta["edge"] is not None
         assert delta["edge"]["from_node"] == "req-123"
         assert delta["edge"]["to_node"] == "tool-456"
+
+    def test_tool_pre_falls_back_to_session_id(self):
+        data = {
+            "session_id": "sess-abc",
+            "tool_use_id": "tool-456",
+            "tool_name": "read_file",
+            "timestamp": "2026-03-01T12:00:02Z",
+        }
+        delta = map_event("tool:pre", data)
+
+        assert delta is not None
+        assert delta["edge"]["from_node"] == "sess-abc"
 
 
 class TestToolPost:
@@ -186,7 +241,7 @@ class TestUnknownEvent:
 
 class TestTimestampGeneration:
     def test_timestamp_generated_when_missing(self):
-        data = {"request_id": "req-no-ts", "model": "claude-3"}
+        data = {"session_id": "sess-no-ts", "model": "claude-3"}
         delta = map_event("provider:request", data)
         assert delta is not None
         assert "timestamp" in delta

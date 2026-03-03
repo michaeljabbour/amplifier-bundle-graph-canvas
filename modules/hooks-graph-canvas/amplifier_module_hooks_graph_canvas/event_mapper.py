@@ -11,11 +11,16 @@ def _timestamp(data: dict) -> str:
     return data.get("timestamp") or datetime.now(timezone.utc).isoformat()
 
 
+def _node_id_from(data: dict) -> str:
+    """Extract a node ID from event data, tolerating missing keys."""
+    return data.get("request_id") or data.get("session_id", "unknown")
+
+
 def _map_provider_request(data: dict) -> dict:
     return {
         "event": "provider:request",
         "action": "add_node",
-        "node_id": data["request_id"],
+        "node_id": _node_id_from(data),
         "data": {
             "type": "llm_turn",
             "status": "thinking",
@@ -30,7 +35,7 @@ def _map_provider_response(data: dict) -> dict:
     return {
         "event": "provider:response",
         "action": "update_node",
-        "node_id": data["request_id"],
+        "node_id": _node_id_from(data),
         "data": {
             "status": "complete",
             "usage": data.get("usage"),
@@ -44,7 +49,7 @@ def _map_content_block_delta(data: dict) -> dict:
     return {
         "event": "content_block:delta",
         "action": "update_node",
-        "node_id": data["request_id"],
+        "node_id": _node_id_from(data),
         "data": {
             "streaming": True,
             "delta": data.get("delta"),
@@ -64,7 +69,7 @@ def _map_tool_pre(data: dict) -> dict:
             "status": "executing",
         },
         "edge": {
-            "from_node": data["request_id"],
+            "from_node": _node_id_from(data),
             "to_node": data["tool_use_id"],
             "edge_type": "data_flow",
         },
