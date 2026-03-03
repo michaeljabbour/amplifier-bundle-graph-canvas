@@ -2,7 +2,7 @@
 
 import pytest
 
-from graph_canvas_compiler.schema import (
+from amplifier_module_graph_canvas_compiler.schema import (
     CompileError,
     NodeCategory,
     NodeTypeSpec,

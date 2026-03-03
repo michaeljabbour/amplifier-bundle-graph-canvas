@@ -1,6 +1,6 @@
 """Tests for event_mapper module."""
 
-from hooks_graph_canvas.event_mapper import map_event
+from amplifier_module_hooks_graph_canvas.event_mapper import map_event
 
 
 class TestProviderRequest:

@@ -6,7 +6,7 @@ import logging
 from typing import Any, Protocol, runtime_checkable
 
 try:
-    from graph_canvas_compiler import compile_graph, decompile_recipe
+    from amplifier_module_graph_canvas_compiler import compile_graph, decompile_recipe
 except ImportError:
     import sys
     from pathlib import Path as _Path
@@ -16,7 +16,7 @@ except ImportError:
     )
     if _compiler_path not in sys.path:
         sys.path.insert(0, _compiler_path)
-    from graph_canvas_compiler import compile_graph, decompile_recipe
+    from amplifier_module_graph_canvas_compiler import compile_graph, decompile_recipe
 
 from .graph_state import GraphState
 

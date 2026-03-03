@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
-from graph_canvas_compiler.schema import CompileError, get_node_type, list_node_types
+from amplifier_module_graph_canvas_compiler.schema import CompileError, get_node_type, list_node_types
 
 from .protocol import DeltaAction, Edge, EdgeType, Graph, Node, NodeSlot
 

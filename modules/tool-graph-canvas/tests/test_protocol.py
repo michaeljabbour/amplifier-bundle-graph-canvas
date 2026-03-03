@@ -2,7 +2,7 @@
 
 import pytest
 
-from tool_graph_canvas.protocol import (
+from amplifier_module_tool_graph_canvas.protocol import (
     Delta,
     DeltaAction,
     Edge,

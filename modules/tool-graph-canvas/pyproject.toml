@@ -16,7 +16,10 @@ dev = [
 ]
 
 [project.entry-points."amplifier.modules"]
-tool-graph-canvas = "tool_graph_canvas:mount"
+tool-graph-canvas = "amplifier_module_tool_graph_canvas:mount"
+
+[tool.hatch.build.targets.wheel]
+packages = ["amplifier_module_tool_graph_canvas"]
 
 [tool.hatch.metadata]
 allow-direct-references = true

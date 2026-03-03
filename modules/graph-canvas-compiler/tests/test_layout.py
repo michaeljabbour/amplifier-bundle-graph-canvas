@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from graph_canvas_compiler.layout import auto_layout
+from amplifier_module_graph_canvas_compiler.layout import auto_layout
 
 
 # ---------------------------------------------------------------------------

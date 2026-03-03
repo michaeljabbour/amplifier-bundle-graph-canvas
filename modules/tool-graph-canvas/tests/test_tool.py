@@ -2,7 +2,7 @@
 
 import pytest
 
-from tool_graph_canvas.tool import GraphCanvasTool
+from amplifier_module_tool_graph_canvas.tool import GraphCanvasTool
 
 
 # ---------------------------------------------------------------------------
@@ -372,7 +372,7 @@ class TestKeplerMount:
     async def test_mount_registers_tool_on_coordinator(self):
         from unittest.mock import AsyncMock, MagicMock
 
-        from tool_graph_canvas import mount
+        from amplifier_module_tool_graph_canvas import mount
 
         coordinator = MagicMock()
         coordinator.mount = AsyncMock()
@@ -388,7 +388,7 @@ class TestKeplerMount:
     async def test_mount_passes_transport_to_tool(self):
         from unittest.mock import AsyncMock, MagicMock
 
-        from tool_graph_canvas import mount
+        from amplifier_module_tool_graph_canvas import mount
 
         fake = FakeTransport()
         coordinator = MagicMock()
@@ -402,7 +402,7 @@ class TestKeplerMount:
     async def test_mount_with_no_transport_is_none(self):
         from unittest.mock import AsyncMock, MagicMock
 
-        from tool_graph_canvas import mount
+        from amplifier_module_tool_graph_canvas import mount
 
         coordinator = MagicMock()
         coordinator.mount = AsyncMock()

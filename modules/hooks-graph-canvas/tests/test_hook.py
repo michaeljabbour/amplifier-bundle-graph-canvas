@@ -3,7 +3,7 @@
 from unittest.mock import AsyncMock
 
 
-from hooks_graph_canvas.hook import (
+from amplifier_module_hooks_graph_canvas.hook import (
     GraphCanvasHook,
     GraphCanvasTransport,
     JsonlTransport,
@@ -206,7 +206,7 @@ class TestKeplerMount:
     async def test_mount_registers_hook_events_on_coordinator(self):
         from unittest.mock import MagicMock
 
-        from hooks_graph_canvas import _HOOK_EVENTS, mount
+        from amplifier_module_hooks_graph_canvas import _HOOK_EVENTS, mount
 
         coordinator = MagicMock()
         coordinator.hooks = MagicMock()
@@ -222,7 +222,7 @@ class TestKeplerMount:
     async def test_mount_passes_transport_from_config(self):
         from unittest.mock import MagicMock
 
-        from hooks_graph_canvas import mount
+        from amplifier_module_hooks_graph_canvas import mount
 
         coordinator = MagicMock()
         coordinator.hooks = MagicMock()
@@ -239,7 +239,7 @@ class TestKeplerMount:
     async def test_mount_does_not_mutate_caller_config(self):
         from unittest.mock import MagicMock
 
-        from hooks_graph_canvas import mount
+        from amplifier_module_hooks_graph_canvas import mount
 
         coordinator = MagicMock()
         coordinator.hooks = MagicMock()

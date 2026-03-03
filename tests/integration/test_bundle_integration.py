@@ -237,7 +237,7 @@ class TestEndToEnd:
         yaml_str = r_compile["result"]["yaml"]
 
         # Decompile back to graph
-        from graph_canvas_compiler import decompile_recipe
+        from amplifier_module_graph_canvas_compiler import decompile_recipe
 
         graph_dict = decompile_recipe(yaml_str)
 

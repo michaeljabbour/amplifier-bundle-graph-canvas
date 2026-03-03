@@ -5,8 +5,8 @@ from __future__ import annotations
 import pytest
 from ruamel.yaml import YAML
 
-from graph_canvas_compiler.compile import compile_graph
-from graph_canvas_compiler.schema import CompileError
+from amplifier_module_graph_canvas_compiler.compile import compile_graph
+from amplifier_module_graph_canvas_compiler.schema import CompileError
 
 
 # ---------------------------------------------------------------------------

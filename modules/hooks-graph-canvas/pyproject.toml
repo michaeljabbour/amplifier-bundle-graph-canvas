@@ -16,7 +16,10 @@ dev = [
 ]
 
 [project.entry-points."amplifier.modules"]
-hooks-graph-canvas = "hooks_graph_canvas:mount"
+hooks-graph-canvas = "amplifier_module_hooks_graph_canvas:mount"
+
+[tool.hatch.build.targets.wheel]
+packages = ["amplifier_module_hooks_graph_canvas"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

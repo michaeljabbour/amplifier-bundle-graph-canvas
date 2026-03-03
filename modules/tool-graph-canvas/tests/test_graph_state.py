@@ -4,7 +4,7 @@ import uuid
 
 import pytest
 
-from tool_graph_canvas.graph_state import GraphState
+from amplifier_module_tool_graph_canvas.graph_state import GraphState
 
 
 class TestAddNode:
